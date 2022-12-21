@@ -3,6 +3,16 @@
 */
 #include "LedControl.h"  // LedControl Library created by Eberhard Fahle at http://playground.arduino.cc/Main/LedControl
 
+#define DEBUG 1 // 0 is Debug off, 1 is Debug on
+
+#if DEBUG == 1
+#define debug(x) Serial.print(x)
+#define debugln(x) Serial.println(x)
+#else
+#define debug(x)
+#define debugln(x)
+#endif
+
 #define Max7219DIN 12  // Pin 12 connected to DIN (DataIN)
 #define Max7219CLK 11  // Pin 11 connected to CLK
 #define Max7219CS 10   // Pin 10 connected to CS
@@ -52,8 +62,8 @@ void loop() {
 
   if (Serial.available() > 0) {  // Prints if serial recieves message
     incomingByte = Serial.read();
-    Serial.print("I received: ");
-    Serial.println(incomingByte, DEC);
+    debug("I received: ");
+    debugln(incomingByte, DEC);
   }
 
   int buttonState = digitalRead(BUTTON_PIN);  // read new state
@@ -197,7 +207,7 @@ void loop() {
       delay(blinkDelay);
       if (sentCount != buttonCount) {
         sentCount = buttonCount;
-        Serial.println(sentCount);
+        Serial.println(sentCount); // Outputs count to PC
       }
       lastBlink = millis();  // Loops pattern
     }
@@ -207,8 +217,8 @@ void loop() {
 }
 
 void onButtonPress() {
-  lastPress = millis();  // resets Attract Loop
-  Serial.println("Down");
+  lastPress = millis();    // resets Attract Loop
+  Serial.println("Down");  // Outputs command to PC
   buttonCount++;
   delay(25);
 }
