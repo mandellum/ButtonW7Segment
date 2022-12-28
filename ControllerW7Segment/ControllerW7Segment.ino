@@ -1,18 +1,16 @@
-/* Countup with button for MAX7219 8 Digit 7-Segment display
+// Countup with button for MAX7219 8 Digit 7-Segment display
+//
 
-*/
-#include "LedControl.h" // LedControl Library created by Eberhard Fahle at http://playground.arduino.cc/Main/LedControl
+#include <LedControl.h> // LedControl Library created by Eberhard Fahle at http://playground.arduino.cc/Main/LedControl
 
-#define DEBUG 1 // 0 is Debug off, 1 is Debug on
+#define DEBUG 0 // 0 is Debug on, 1 is Debug off
 
-#if DEBUG == 0
+#if DEBUG == 1
 #define debug(x) Serial.print(x)
 #define debugln(x) Serial.println(x)
-#define debugln(x, y) Serial.println(x, y)
 #else
 #define debug(x)
 #define debugln(x)
-#define debugln(x, y)
 #endif
 
 #define Max7219DIN 12 // Pin 12 connected to DIN (DataIN)
@@ -41,6 +39,7 @@ unsigned long idleWaitTime = 10000; // 10s
 unsigned long blinkDelay = 700;     // 0.7s
 
 long int sendCount = 0; // for sending count thru serial
+long int recieveCount = 0;
 long int buttonCount;
 const unsigned int MAX_MESSAGE_LENGTH = 9;
 
@@ -59,7 +58,7 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);      // set up built-in LED
   randomSeed(analogRead(0));
   // buttonCount = random(0, 9990);
-  buttonCount = 11111111; // initialize button count
+  buttonCount = 987; // initialize button count
 }
 
 void loop()
@@ -68,7 +67,7 @@ void loop()
 
   int buttonState = digitalRead(BUTTON_PIN); // read new state
 
-  if (buttonState == LOW) 
+  if (buttonState == LOW)
   {                                  // if button is pressed
     digitalWrite(LED_BUILTIN, HIGH); // turn on LED
     digitalWrite(RELAY_PIN, HIGH);   // turn on Relay
@@ -242,6 +241,7 @@ void idleLED()
       if (recievedCountUpdate == true)
       {
         Serial.println(sendCount); // if PC is sending info, outputs count to PC
+        debugln("Updating count to PC");
       }
     }
 
@@ -260,38 +260,29 @@ void updateCount()
 {
 
   // Check to see if anything is available in the serial receive buffer
-  while (Serial.available() > 0)
+  if (Serial.available())
   {
     if (recievedCountUpdate == false)
     {
-      !recievedCountUpdate;
+      debugln(recievedCountUpdate);
+      recievedCountUpdate = !recievedCountUpdate;
+      debugln(recievedCountUpdate);
     }
 
-    // Create a place to hold the incoming message
-    static char message[MAX_MESSAGE_LENGTH];
-    static unsigned int message_pos = 0;
-
-    // Read the next available byte in the serial receive buffer
-    char inByte = Serial.read();
-
-    // Message coming in (check not terminating character) and guard for over message size
-    if (inByte != '\n' && (message_pos < MAX_MESSAGE_LENGTH - 1))
-
+    char c = Serial.read();
+    if (c == '\n')
     {
-      message[message_pos] = inByte;
-      // Add the incoming byte to our message
-      message_pos++;
+      // Full message received...
+      buttonCount = recieveCount;
+      recieveCount = 0;
+      debug("buttonCount updated: ");
+      debugln(buttonCount);
+      debugln(recievedCountUpdate);
     }
     else
     {
-      // Full message received...
-      message[message_pos] = '\0'; // Add null character to string
-      debug("Message to send: ");
-      debug(message);
-      buttonCount = atoi(message); // Converts to long int and then saves
-      debug("Integer to send: ");
-      debugln(buttonCount);
-      message_pos = 0; // Reset for the next message
+      recieveCount = recieveCount * 10;
+      recieveCount = recieveCount + (c - '0'); // Subtract '0' to adjust from ascii back to real numbers
     }
   }
 }
