@@ -1,6 +1,4 @@
 {
     "port": "COM3",
-    "board": "arduino:avr:uno",
-    "programmer": "arduino:avrisp",
-    "sketch": "ControllerW7Segment\\ControllerW7Segment.ino"
+    "board": "arduino:avr:uno"
 }

@@ -40,9 +40,11 @@ unsigned long millisRedLED = 0;
 unsigned long idleWaitTime = 10000; // 10s
 unsigned long blinkDelay = 700;     // 0.7s
 
-long int sentCount = 0; // for sending count thru serial
-long int buttonCount = 0;
-long int incomingByte = 0; // for incoming serial data
+long int sendCount = 0; // for sending count thru serial
+long int buttonCount;
+const unsigned int MAX_MESSAGE_LENGTH = 9;
+
+bool recievedCountUpdate = false; // Did we recieve update from PC?
 
 void setup()
 {
@@ -57,22 +59,16 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);      // set up built-in LED
   randomSeed(analogRead(0));
   // buttonCount = random(0, 9990);
-  buttonCount = 8789; // initialize button count
+  buttonCount = 11111111; // initialize button count
 }
 
 void loop()
 {
-
-  if (Serial.available() > 0)
-  { // Prints if serial recieves message
-    incomingByte = Serial.read();
-    debug("I received: ");
-    debugln(incomingByte, DEC);
-  }
+  updateCount();
 
   int buttonState = digitalRead(BUTTON_PIN); // read new state
 
-  if (buttonState == LOW)
+  if (buttonState == LOW) 
   {                                  // if button is pressed
     digitalWrite(LED_BUILTIN, HIGH); // turn on LED
     digitalWrite(RELAY_PIN, HIGH);   // turn on Relay
@@ -82,7 +78,7 @@ void loop()
       onButtonPress();
     }
   }
-  else if (buttonState == HIGH)
+  else if (buttonState == HIGH) // on buttonUp "&& previousButtonState == LOW"
   {
     digitalWrite(LED_BUILTIN, LOW); // turn off LED
     digitalWrite(RELAY_PIN, LOW);   // turn off Relay
@@ -240,17 +236,62 @@ void idleLED()
 {
   if (millis() > lastPress + idleWaitTime)
   {
+    if (sendCount != buttonCount)
+    {
+      sendCount = buttonCount;
+      if (recievedCountUpdate == true)
+      {
+        Serial.println(sendCount); // if PC is sending info, outputs count to PC
+      }
+    }
+
     if (millis() > millisRedLED + 2 * blinkDelay)
     {
       digitalWrite(RELAY_PIN, HIGH);   // turn on relay
       digitalWrite(LED_BUILTIN, HIGH); // turn on built-in
-      delay(blinkDelay);
-      if (sentCount != buttonCount)
-      {
-        sentCount = buttonCount;
-        Serial.println(sentCount); // Outputs count to PC
-      }
-      millisRedLED = millis(); // Loops pattern
+      delay(blinkDelay);               // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX NEEDS Fix
+
+      millisRedLED = millis(); // resets Loop
+    }
+  }
+}
+
+void updateCount()
+{
+
+  // Check to see if anything is available in the serial receive buffer
+  while (Serial.available() > 0)
+  {
+    if (recievedCountUpdate == false)
+    {
+      !recievedCountUpdate;
+    }
+
+    // Create a place to hold the incoming message
+    static char message[MAX_MESSAGE_LENGTH];
+    static unsigned int message_pos = 0;
+
+    // Read the next available byte in the serial receive buffer
+    char inByte = Serial.read();
+
+    // Message coming in (check not terminating character) and guard for over message size
+    if (inByte != '\n' && (message_pos < MAX_MESSAGE_LENGTH - 1))
+
+    {
+      message[message_pos] = inByte;
+      // Add the incoming byte to our message
+      message_pos++;
+    }
+    else
+    {
+      // Full message received...
+      message[message_pos] = '\0'; // Add null character to string
+      debug("Message to send: ");
+      debug(message);
+      buttonCount = atoi(message); // Converts to long int and then saves
+      debug("Integer to send: ");
+      debugln(buttonCount);
+      message_pos = 0; // Reset for the next message
     }
   }
 }
