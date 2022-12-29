@@ -41,7 +41,6 @@ unsigned long blinkDelay = 700;     // 0.7s
 long int sendCount = 0; // for sending count thru serial
 long int recieveCount = 0;
 long int buttonCount;
-const unsigned int MAX_MESSAGE_LENGTH = 9;
 
 bool recievedCountUpdate = false; // Did we recieve update from PC?
 
