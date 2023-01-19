@@ -13,5 +13,4 @@ In no particular order:
 * Support for multiple arcade buttons, up to 64 individual inputs
 * Support for individual control of each button via Unity serial communication
 * Pretty flashing pattern during idle
-* Incorporating a multi-digit 7-segment display that relays a count of the total number of presses from Unity
 * Include electrical schematics
