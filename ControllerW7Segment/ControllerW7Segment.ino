@@ -3,7 +3,7 @@
 
 #include <LedControl.h> // LedControl Library created by Eberhard Fahle at http://playground.arduino.cc/Main/LedControl
 
-#define DEBUG 0 // 0 is Debug on, 1 is Debug off
+#define DEBUG 0 // 0 is Debug off, 1 is Debug on
 
 #if DEBUG == 1
 #define debug(x) Serial.print(x)
@@ -35,7 +35,7 @@ int eightnum = 0;
 int previousButtonState = HIGH; // Not pressed = high
 unsigned long lastPress = 0;
 unsigned long millisRedLED = 0;
-unsigned long idleWaitTime = 10000; // 10s
+unsigned long idleWaitTime = 15000; // 15s
 unsigned long blinkDelay = 700;     // 0.7s
 
 long int sendCount = 0; // for sending count thru serial
@@ -49,7 +49,7 @@ void setup()
   Serial.begin(9600); // initialize serial baud rate at 9600 - in tests, it worked well
 
   lc.shutdown(0, false); // Wake up the display
-  lc.setIntensity(0, 0); // Set Brightness 0-15
+  lc.setIntensity(0, 5); // Set Brightness 0-15
   lc.clearDisplay(0);    // Clear display
 
   pinMode(BUTTON_PIN, INPUT_PULLUP); // set button to pull-up mode
@@ -57,7 +57,7 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);      // set up built-in LED
   randomSeed(analogRead(0));
   // buttonCount = random(0, 9990);
-  buttonCount = 987; // initialize button count
+  buttonCount = 8888; // initialize button count
 }
 
 void loop()
