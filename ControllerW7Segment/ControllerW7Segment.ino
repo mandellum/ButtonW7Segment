@@ -39,7 +39,7 @@ unsigned long idleWaitTime = 15000; // 15s
 unsigned long blinkDelay = 700;     // 0.7s
 
 long int sendCount = 0; // for sending count thru serial
-long int recieveCount = 0;
+long int recieveMessageBuffer = 0;
 long int buttonCount;
 
 bool recievedCountUpdate = false; // Did we recieve update from PC?
@@ -255,33 +255,34 @@ void idleLED()
   }
 }
 
-void updateCount()
+void updateCount() // runs once per loop()
 {
-
-  // Check to see if anything is available in the serial receive buffer
-  if (Serial.available())
+  // Check to see if anything exists in the serial receive buffer
+  if (Serial.available() > 0)
   {
-    if (recievedCountUpdate == false)
+    if (recievedCountUpdate == false) // flip boolean to true once
     {
-      debugln(recievedCountUpdate);
       recievedCountUpdate = !recievedCountUpdate;
-      debugln(recievedCountUpdate);
     }
 
-    char c = Serial.read();
-    if (c == '\n')
+    while (Serial.available() > 0) // runs WHILE there's something in the serial recieve buffer
     {
-      // Full message received...
-      buttonCount = recieveCount;
-      recieveCount = 0;
-      debug("buttonCount updated: ");
-      debugln(buttonCount);
-      debugln(recievedCountUpdate);
-    }
-    else
-    {
-      recieveCount = recieveCount * 10;
-      recieveCount = recieveCount + (c - '0'); // Subtract '0' to adjust from ascii back to real numbers
+      char c = Serial.read();
+      if (c == '\n')
+      {
+        // Full message received
+        buttonCount = recieveMessageBuffer; // moves count
+        recieveMessageBuffer = 0;           // clears buffer
+        debug("buttonCount updated: ");
+        debugln(buttonCount);
+        debugln(recievedCountUpdate);
+      }
+      else
+      {
+        // take Serial character, convert to number, then shift into next digit.
+        recieveMessageBuffer = recieveMessageBuffer * 10;
+        recieveMessageBuffer = recieveMessageBuffer + (c - '0'); // Subtract '0' to adjust from ascii back to real numbers
+      }
     }
   }
 }
