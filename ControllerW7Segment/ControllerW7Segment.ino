@@ -3,9 +3,9 @@
 
 #include <LedControl.h> // LedControl Library created by Eberhard Fahle at http://playground.arduino.cc/Main/LedControl
 
-#define DEBUG 0 // 0 is Debug off, 1 is Debug on
+#define DEBUG false // false is Debug off, true is Debug on
 
-#if DEBUG == 1
+#if DEBUG == true
 #define debug(x) Serial.print(x)
 #define debugln(x) Serial.println(x)
 #else
@@ -34,7 +34,7 @@ int eightnum = 0;
 // Variables for button
 int previousButtonState = HIGH; // Not pressed = high
 unsigned long lastPress = 0;
-unsigned long millisRedLED = 0;
+unsigned long millisLedIdle = 0;    // Time that LED was last turned on
 unsigned long idleWaitTime = 15000; // 15s
 unsigned long blinkDelay = 700;     // 0.7s
 
@@ -43,6 +43,8 @@ long int recieveMessageBuffer = 0;
 long int buttonCount;
 
 bool recievedCountUpdate = false; // Did we recieve update from PC?
+bool idleLightsOn = false;
+bool idleState = false;
 
 void setup()
 {
@@ -76,13 +78,24 @@ void loop()
       onButtonPress();
     }
   }
-  else if (buttonState == HIGH) // on buttonUp "&& previousButtonState == LOW"
+  else if (buttonState == HIGH && previousButtonState == LOW) // button is not pressed && was just pressed
   {
     digitalWrite(LED_BUILTIN, LOW); // turn off LED
     digitalWrite(RELAY_PIN, LOW);   // turn off Relay
   }
 
   //  Display number on Display depending on number of digits remaining
+  updateSevenSegmentDisplay();
+  if (millis() > lastPress + idleWaitTime) // if time passed idle wait time
+  {
+    idleState = true;
+    idleProcess();
+  }
+  previousButtonState = buttonState;
+}
+
+void updateSevenSegmentDisplay()
+{
   if (buttonCount > 9999999)
   {
     firstnum = ((buttonCount / 10000000) % 10);
@@ -215,43 +228,51 @@ void loop()
       }
     }
   }
-
-  // Idle animation (blinks once for every three counts)
-  idleLED();
-
-  previousButtonState = buttonState;
 }
 
 void onButtonPress()
 {
-  lastPress = millis();   // resets Attract Loop
+  lastPress = millis(); // resets Attract Loop
+  idleState = false;
   Serial.println("Down"); // Outputs command to PC
   buttonCount++;
-  delay(25);
+  delay(25); // reduces accidental double inputs
 }
 
-void idleLED()
+void idleProcess()
 {
-  if (millis() > lastPress + idleWaitTime)
+  updatePCDuringIdle();
+  idleAnimation();
+}
+
+void updatePCDuringIdle()
+{
+  if (sendCount != buttonCount)
   {
-    if (sendCount != buttonCount)
+    sendCount = buttonCount;
+    if (recievedCountUpdate == true)
     {
-      sendCount = buttonCount;
-      if (recievedCountUpdate == true)
-      {
-        Serial.println(sendCount); // if PC is sending info, outputs count to PC
-        debugln("Updating count to PC");
-      }
+      Serial.println(sendCount); // updates sendCount and outputs it to PC
+      debugln("Updating count to PC");
     }
+  }
+}
 
-    if (millis() > millisRedLED + 2 * blinkDelay)
-    {
-      digitalWrite(RELAY_PIN, HIGH);   // turn on relay
-      digitalWrite(LED_BUILTIN, HIGH); // turn on built-in
-      delay(blinkDelay);               // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX NEEDS Fix
+void idleAnimation()
+{
+  if (millis() > millisLedIdle + blinkDelay && idleLightsOn == true)
+  {
+    digitalWrite(RELAY_PIN, LOW);   // turn off relay
+    digitalWrite(LED_BUILTIN, LOW); // turn off built-in
+    idleLightsOn = false;
+  }
 
-      millisRedLED = millis(); // resets Loop
-    }
+  if (millis() > millisLedIdle + 3 * blinkDelay && idleLightsOn == false)
+  {
+    digitalWrite(RELAY_PIN, HIGH);   // turn on relay
+    digitalWrite(LED_BUILTIN, HIGH); // turn on built-in
+    idleLightsOn = true;
+    millisLedIdle = millis();
   }
 }
 
@@ -275,7 +296,6 @@ void updateCount() // runs once per loop()
         recieveMessageBuffer = 0;           // clears buffer
         debug("buttonCount updated: ");
         debugln(buttonCount);
-        debugln(recievedCountUpdate);
       }
       else
       {
