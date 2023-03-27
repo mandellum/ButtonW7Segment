@@ -291,7 +291,7 @@ void updateCount() // runs once per loop()
     while (Serial.available() > 0) // runs WHILE there's something in the serial recieve buffer
     {
       char c = Serial.read();
-      if (c == '\n' || c == '\r')
+      if (c == '\n' || c == '\r' || c == '\r\n')
       {
         // Full message received
         buttonCount = recieveMessageBuffer; // moves count
