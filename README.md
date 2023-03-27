@@ -14,3 +14,4 @@ In no particular order:
 * Support for individual control of each button via Unity serial communication
 * Pretty flashing pattern during idle
 * Include electrical schematics
+* Include pictures

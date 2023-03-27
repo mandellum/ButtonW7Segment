@@ -60,6 +60,8 @@ void setup()
   randomSeed(analogRead(0));
   // buttonCount = random(0, 9990);
   buttonCount = 8888; // initialize button count
+  recieveMessageBuffer = 0;           // clears buffer
+
 }
 
 void loop()
@@ -281,19 +283,20 @@ void updateCount() // runs once per loop()
   // Check to see if anything exists in the serial receive buffer
   if (Serial.available() > 0)
   {
-    if (recievedCountUpdate == false) // flip boolean to true once
+    if (recievedCountUpdate == false) // flip boolean to true when recieved signal from PC
     {
-      recievedCountUpdate = !recievedCountUpdate;
+      recievedCountUpdate = true;
     }
 
     while (Serial.available() > 0) // runs WHILE there's something in the serial recieve buffer
     {
       char c = Serial.read();
-      if (c == '\n')
+      if (c == '\n' || c == '\r')
       {
         // Full message received
         buttonCount = recieveMessageBuffer; // moves count
         recieveMessageBuffer = 0;           // clears buffer
+        Serial.flush();
         debug("buttonCount updated: ");
         debugln(buttonCount);
       }
