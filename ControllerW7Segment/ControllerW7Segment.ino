@@ -59,9 +59,8 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);      // set up built-in LED
   randomSeed(analogRead(0));
   // buttonCount = random(0, 9990);
-  buttonCount = 8888; // initialize button count
-  recieveMessageBuffer = 0;           // clears buffer
-
+  buttonCount = 8888;       // initialize button count
+  recieveMessageBuffer = 0; // clears buffer
 }
 
 void loop()
@@ -291,7 +290,7 @@ void updateCount() // runs once per loop()
     while (Serial.available() > 0) // runs WHILE there's something in the serial recieve buffer
     {
       char c = Serial.read();
-      if (c == '\n' || c == '\r' || c == '\r\n')
+      if (c == '\n')
       {
         // Full message received
         buttonCount = recieveMessageBuffer; // moves count
@@ -299,6 +298,11 @@ void updateCount() // runs once per loop()
         Serial.flush();
         debug("buttonCount updated: ");
         debugln(buttonCount);
+      }
+      else if (c == '\r')
+      {
+        // only for CRLF cases, do nothing
+        debugln("Carriage Return");
       }
       else
       {
